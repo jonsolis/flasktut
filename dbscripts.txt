@@ -1,0 +1,10 @@
+/* TODO:
+ * fields that can have 0 or more entries
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+CREATE TABLE reports (uid INT(250) AUTO_INCREMENT PRIMARY KEY, reportTitle VARCHAR(100), reportComments VARCHAR(1000), field01 VARCHAR(500), field02 VARCHAR(500), field03 VARCHAR(500));

@@ -1,11 +1,13 @@
 from flask import Flask, render_template, flash, request, url_for, redirect, session
 from flask_admin import Admin
+#from flask_admin.contrib import sqla
 from content_management import Content
 from dbconnect import connection
-from wtforms import Form, BooleanField, TextField, PasswordField, validators
+from wtforms import Form, BooleanField, TextField, PasswordField, validators, widgets, fields
 from passlib.hash import sha256_crypt
 from MySQLdb import escape_string as thwart
 from functools import wraps
+#from flask_sqlalchemy import SQLAlchemy
 import gc
 
 TOPIC_DICT = Content()
@@ -13,12 +15,25 @@ TOPIC_DICT = Content()
 app = Flask(__name__)
 
 
+''' Define a wtforms widget and field.
+    WTForms documentation on custom widgets:
+    http://wtforms.readthedocs.org/en/latest/widgets.html#custom-widgets
+'''
+class CKTextAreaWidget(widgets.TextArea):
+    def __call__(self, field, **kwargs):
+        # add WYSIWYG class to existing classes
+        existing_classes = kwargs.pop('class', '') or kwargs.pop('class_', '')
+        kwargs['class'] = u'%s %s' % (existing_classes, "ckeditor")
+        return super(CKTextAreaWidget, self).__call__(field, **kwargs)
+
+class CKTextAreaField(fields.TextAreaField):
+    widget = CKTextAreaWidget()
 
 
-
-
-
-
+# Flask views  
+@app.route('/admin/')  
+def index():
+    return '<a href="/admin/">Click me to get to Admin!</a>'
 
 
 @app.route('/')
@@ -81,14 +96,13 @@ def login_page():
         return render_template("login.html", error = error)  
 
 
-class RegistrationForm(Form):
-    username = TextField('Username', [validators.Length(min=4, max=20)])
-    email = TextField('Email Address', [validators.Length(min=6, max=50)])
-    password = PasswordField('New Password', [
-        validators.Required(),
-        validators.EqualTo('confirm', message='Passwords must match')
-    ])
-    confirm = PasswordField('Repeat Password')
+class ReportForm(Form):
+    reportTitle = TextField('Report Title', [validators.Length(min=4, max=20)])
+    reportComments = TextField('Report Comments', [validators.Length(min=6, max=50)])
+    field01 = TextField('first one', [validators.Length(min=6, max=50)])
+    field02 = TextField('field two', [validators.Length(min=6, max=50)])
+    field03 = TextField('field three', [validators.Length(min=6, max=50)])
+
     accept_tos = BooleanField('I accept the Terms of Service and Privacy Notice (updated Jan 22, 2015)', [validators.Required()])
     
 
