@@ -1,0 +1,21 @@
+{% extends "header.html" %}
+
+{% block body %}
+
+
+<div>
+	<h1>secret admin page</h1>
+	<textarea cols="80" id="editor1" name="editor1" rows="10"></textarea>
+<script>
+    CKEDITOR.replace( 'editor1', {
+        // Load the Simple Box plugin.
+        extraPlugins: 'simplebox'
+    } );
+</script>
+</div>
+
+
+<p>sup</p>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/ckeditor/4.0.1/ckeditor.js"></script>
+
+{% endblock %}

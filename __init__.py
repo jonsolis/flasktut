@@ -1,12 +1,24 @@
 from flask import Flask, render_template, flash, request, url_for, redirect, session
+#from flask.ext.sqlalchemy import SQLAlchemy
+
 from flask_admin import Admin
+#from flask_sqlalchemy import SQLAlchemy
+
+#from flask_sqlalchemy import SQLAlchemy
+#from flask_admin.contrib.sqla import ModelView
+
 #from flask_admin.contrib import sqla
 from content_management import Content
 from dbconnect import connection
-from wtforms import Form, BooleanField, TextField, PasswordField, validators, widgets, fields
+from wtforms import Form, BooleanField, TextField, PasswordField, validators, widgets, fields, TextAreaField
 from passlib.hash import sha256_crypt
 from MySQLdb import escape_string as thwart
 from functools import wraps
+
+from wtforms.widgets import TextArea, HTMLString, html_params
+from .widgets import WysiHtml5Widget
+
+
 #from flask_sqlalchemy import SQLAlchemy
 import gc
 
@@ -15,25 +27,51 @@ TOPIC_DICT = Content()
 app = Flask(__name__)
 
 
-''' Define a wtforms widget and field.
-    WTForms documentation on custom widgets:
-    http://wtforms.readthedocs.org/en/latest/widgets.html#custom-widgets
-'''
-class CKTextAreaWidget(widgets.TextArea):
+
+
+
+class WysiHtml5Widget(TextArea):
     def __call__(self, field, **kwargs):
-        # add WYSIWYG class to existing classes
-        existing_classes = kwargs.pop('class', '') or kwargs.pop('class_', '')
-        kwargs['class'] = u'%s %s' % (existing_classes, "ckeditor")
+        kwargs['data-role'] = u'wysihtml5'
+        kwargs['class'] = u'span8'
+        kwargs['rows'] = 10
+        return super(WysiHtml5Widget, self).__call__(field, **kwargs)
+
+
+
+
+class WysiHtml5TextAreaField(fields.TextAreaField):
+    widget = WysiHtml5Widget()
+
+
+
+
+class CKTextAreaWidget(TextArea):
+    def __call__(self, field, **kwargs):
+        if kwargs.get('class'):
+            kwargs['class'] += ' ckeditor'
+        else:
+            kwargs.setdefault('class', 'ckeditor')
         return super(CKTextAreaWidget, self).__call__(field, **kwargs)
 
-class CKTextAreaField(fields.TextAreaField):
+class CKTextAreaField(TextAreaField):
     widget = CKTextAreaWidget()
 
+class MessageAdmin():
+    form_overrides = {
+        'body': CKTextAreaField
+    }
+    create_template = 'ckeditor.html'
+    edit_template = 'ckeditor.html'
 
-# Flask views  
-@app.route('/admin/')  
+
+
+
+# Flask admin views  
+@app.route('/admin/', methods=["GET","POST"])  
 def index():
-    return '<a href="/admin/">Click me to get to Admin!</a>'
+    widget = "just a placeholder"
+    return render_template("base.html")
 
 
 @app.route('/')
@@ -91,8 +129,8 @@ def login_page():
         return render_template("login.html", error=error)
 
     except Exception as e:
-        #flash(e)
-        error = "Invalid credentials, try again."
+        error =  flash(e)
+        #error = "Invalid credentials, try again."
         return render_template("login.html", error = error)  
 
 
@@ -105,6 +143,23 @@ class ReportForm(Form):
 
     accept_tos = BooleanField('I accept the Terms of Service and Privacy Notice (updated Jan 22, 2015)', [validators.Required()])
     
+
+
+
+
+
+
+class RegistrationForm(Form):
+    username = TextField('Username', [validators.Length(min=4, max=20)])
+    email = TextField('Email Address', [validators.Length(min=6, max=50)])
+    password = PasswordField('New Password', [
+        validators.Required(),
+        validators.EqualTo('confirm', message='Passwords must match')
+    ])
+    confirm = PasswordField('Repeat Password')
+    accept_tos = BooleanField('I accept the Terms of Service and Privacy Notice (updated Jan 22, 2015)', [validators.Required()])
+
+
 
 @app.route('/register/', methods=["GET","POST"])
 def register_page():
@@ -168,4 +223,7 @@ def page_not_found(e):
 
 
 if __name__ == "__main__":
-	app.run()
+	# Create admin
+	admin = admin.Admin(app, name="Example: WYSIWYG")
+
+	app.run(debug=True)
